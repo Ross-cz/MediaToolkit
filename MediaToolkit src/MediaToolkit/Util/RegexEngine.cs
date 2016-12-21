@@ -64,7 +64,7 @@ namespace MediaToolkit.Util
 			int? sizeKb = GetIntValue(matchSize);
 			double? bitrate = GetDoubleValue(matchBitrate);
 
-			progressEventArgs = new ConvertProgressEventArgs(processedDuration, TimeSpan.Zero, frame, fps, sizeKb, bitrate);
+			progressEventArgs = new ConvertProgressEventArgs(data, processedDuration, TimeSpan.Zero, frame, fps, sizeKb, bitrate);
 
 			return true;
 		}
@@ -147,29 +147,64 @@ namespace MediaToolkit.Util
 
 			if (!matchMetaVideo.Success) return;
 
-			string fullMetadata = matchMetaVideo.Groups[1].ToString();
-
-			GroupCollection matchVideoFormatColorSize = Index[Find.VideoFormatColorSize].Match(fullMetadata).Groups;
-			GroupCollection matchVideoFps = Index[Find.VideoFps].Match(fullMetadata).Groups;
-			Match matchVideoBitRate = Index[Find.BitRate].Match(fullMetadata);
-
 			if (engine.InputFile.Metadata == null)
 				engine.InputFile.Metadata = new Metadata();
 
 			if (engine.InputFile.Metadata.VideoData == null)
-				engine.InputFile.Metadata.VideoData = new Metadata.Video
-				{
-					Format = matchVideoFormatColorSize[1].ToString(),
-					ColorModel = matchVideoFormatColorSize[2].ToString(),
-					FrameSize = matchVideoFormatColorSize[3].ToString(),
-					Width = Int32.Parse(matchVideoFormatColorSize[3].ToString().Split('x')[0]),
-					Height = Int32.Parse(matchVideoFormatColorSize[3].ToString().Split('x')[1]),
-					Fps = matchVideoFps[1].Success && !string.IsNullOrEmpty(matchVideoFps[1].ToString()) 
+			{
+				string fullMetadata = matchMetaVideo.Groups[1].ToString();
+				writeVideoMetadata(fullMetadata, engine.InputFile.Metadata);
+			}
+		}
+
+		internal static bool IsMediaFileData(bool isOutput, string data, out MediaFileEventArgs mediaFileEvent)
+		{
+			mediaFileEvent = null;
+
+			Match matchMetaVideo = Index[Find.MetaVideo].Match(data);
+			Match matchMetaAudio = Index[Find.MetaAudio].Match(data);
+
+			if (!matchMetaVideo.Success && !matchMetaAudio.Success) return false;
+
+
+			var file = new MediaFile
+			{
+				Metadata = new Metadata()
+			};
+
+			string fullMetadata = matchMetaVideo.Groups[1].ToString();
+			if (matchMetaVideo.Success)
+			{
+				writeVideoMetadata(fullMetadata, file.Metadata);
+			}
+			else
+			{
+				writeAudioMetadata(fullMetadata, file.Metadata);
+			}
+
+			mediaFileEvent = new MediaFileEventArgs(matchMetaVideo.Success, isOutput, file);
+			return true;
+		}
+
+		private static void writeVideoMetadata(string fullMetadata, Metadata metadata)
+		{
+			GroupCollection matchVideoFormatColorSize = Index[Find.VideoFormatColorSize].Match(fullMetadata).Groups;
+			GroupCollection matchVideoFps = Index[Find.VideoFps].Match(fullMetadata).Groups;
+			Match matchVideoBitRate = Index[Find.BitRate].Match(fullMetadata);
+
+			metadata.VideoData = new Metadata.Video
+			{
+				Format = matchVideoFormatColorSize[1].ToString(),
+				ColorModel = matchVideoFormatColorSize[2].ToString(),
+				FrameSize = matchVideoFormatColorSize[3].ToString(),
+				Width = Int32.Parse(matchVideoFormatColorSize[3].ToString().Split('x')[0]),
+				Height = Int32.Parse(matchVideoFormatColorSize[3].ToString().Split('x')[1]),
+				Fps = matchVideoFps[1].Success && !string.IsNullOrEmpty(matchVideoFps[1].ToString())
 						? Convert.ToDouble(matchVideoFps[1].ToString(), new CultureInfo("en-US")) : 0,
-					BitRateKbs = matchVideoBitRate.Success
+				BitRateKbs = matchVideoBitRate.Success
 										? (int?)Convert.ToInt32(matchVideoBitRate.Groups[1].ToString())
 										: null
-				};
+			};
 		}
 
 		internal static void TestAudio(string data, EngineParameters engine)
@@ -178,22 +213,27 @@ namespace MediaToolkit.Util
 
 			if (!matchMetaAudio.Success) return;
 
-			string fullMetadata = matchMetaAudio.Groups[1].ToString();
-
-			GroupCollection matchAudioFormatHzChannel = Index[Find.AudioFormatHzChannel].Match(fullMetadata).Groups;
-			GroupCollection matchAudioBitRate = Index[Find.BitRate].Match(fullMetadata).Groups;
-
 			if (engine.InputFile.Metadata == null)
 				engine.InputFile.Metadata = new Metadata();
 
 			if (engine.InputFile.Metadata.AudioData == null)
-				engine.InputFile.Metadata.AudioData = new Metadata.Audio
-				{
-					Format = matchAudioFormatHzChannel[1].ToString(),
-					SampleRate = matchAudioFormatHzChannel[2].ToString(),
-					ChannelOutput = matchAudioFormatHzChannel[3].ToString(),
-					BitRateKbs = !(matchAudioBitRate[1].ToString().IsNullOrWhiteSpace()) ? Convert.ToInt32(matchAudioBitRate[1].ToString()) : 0
-				};
+			{
+				string fullMetadata = matchMetaAudio.Groups[1].ToString();
+				writeAudioMetadata(fullMetadata, engine.InputFile.Metadata);
+			}
+		}
+
+		private static void writeAudioMetadata(string fullMetadata, Metadata metadata)
+		{
+			GroupCollection matchAudioFormatHzChannel = Index[Find.AudioFormatHzChannel].Match(fullMetadata).Groups;
+			GroupCollection matchAudioBitRate = Index[Find.BitRate].Match(fullMetadata).Groups;
+			metadata.AudioData = new Metadata.Audio
+			{
+				Format = matchAudioFormatHzChannel[1].ToString(),
+				SampleRate = matchAudioFormatHzChannel[2].ToString(),
+				ChannelOutput = matchAudioFormatHzChannel[3].ToString(),
+				BitRateKbs = !(matchAudioBitRate[1].ToString().IsNullOrWhiteSpace()) ? Convert.ToInt32(matchAudioBitRate[1].ToString()) : 0
+			};
 		}
 
 		internal enum Find
