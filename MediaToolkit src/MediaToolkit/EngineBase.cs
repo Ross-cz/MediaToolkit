@@ -54,7 +54,7 @@
 
             this.EnsureDirectoryExists ();
             this.EnsureFFmpegFileExists();
-            this.EnsureFFmpegIsNotUsed ();
+            // NOT NEEDED:  this.EnsureFFmpegIsNotUsed ();
         }
 
         private void EnsureFFmpegIsNotUsed()
