@@ -32,7 +32,7 @@ namespace MediaToolkit.Util
                     ? string.Empty
                     : string.Format(CultureInfo.InvariantCulture, value, args);
             }
-            catch (FormatException ex) {
+            catch (FormatException) {
                 return value;
             }
         }
@@ -57,7 +57,7 @@ namespace MediaToolkit.Util
 
         public static void ForEach<T>(this IEnumerable<T> collection, Action<T> action)
         {
-            if (action == null) throw new ArgumentNullException("action");
+            if (action == null) throw new ArgumentNullException(nameof(action));
 
             foreach (T t in collection) action(t);
         }

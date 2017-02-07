@@ -77,7 +77,7 @@
 
         private void EnsureDirectoryExists()
         {
-            string directory = Path.GetDirectoryName(this.FFmpegFilePath) ?? Directory.GetCurrentDirectory(); ;
+            string directory = Path.GetDirectoryName(this.FFmpegFilePath) ?? Directory.GetCurrentDirectory();
 
             if (!Directory.Exists(directory))
             {

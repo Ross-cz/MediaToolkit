@@ -79,7 +79,7 @@
 		{
 			if (ffmpegCommand.IsNullOrWhiteSpace())
 			{
-				throw new ArgumentNullException("ffmpegCommand");
+				throw new ArgumentNullException(nameof(ffmpegCommand));
 			}
 
 			EngineParameters engineParameters = new EngineParameters { CustomArguments = ffmpegCommand, WorkingFolder = workingFolder };
@@ -125,7 +125,7 @@
 
 		private void FFmpegEngine(EngineParameters engineParameters)
 		{
-			if (!engineParameters.InputFile.Filename.StartsWith("http://") && !File.Exists(engineParameters.InputFile.Filename))
+			if (!engineParameters.InputFile.Filename.StartsWith("http://", StringComparison.InvariantCultureIgnoreCase) && !File.Exists(engineParameters.InputFile.Filename))
 			{
 				throw new FileNotFoundException(Resources.Exception_Media_Input_File_Not_Found, engineParameters.InputFile.Filename);
 			}
@@ -325,7 +325,7 @@
 				if ((this.FFmpegProcess.ExitCode != 0 && this.FFmpegProcess.ExitCode != 1) || caughtException != null)
 				{
 					throw new Exception(
-							this.FFmpegProcess.ExitCode + ": " + receivedMessagesLog[1] + receivedMessagesLog[0],
+							$"ffmpeg exit code {FFmpegProcess.ExitCode}: {receivedMessagesLog[1]}{receivedMessagesLog[0]}",
 							caughtException);
 				}
 			}
